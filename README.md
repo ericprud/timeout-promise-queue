@@ -2,7 +2,6 @@
 [![NPM Version](https://badge.fury.io/js/timeout-promise-queue.png)](https://npmjs.org/package/timeout-promise-queue)
 [![Build Status](https://travis-ci.org/ericprud/timeout-promise-queue.svg?branch=master)](https://travis-ci.org/ericprud/timeout-promise-queue)
 [![Coverage Status](https://coveralls.io/repos/github/ericprud/timeout-promise-queue/badge.svg?branch=master)](https://coveralls.io/github/ericprud/timeout-promise-queue?branch=master)
-[![Dependency Status](https://gemnasium.com/ericprud/timeout-promise-queue.png)](https://gemnasium.com/ericprud/timeout-promise-queue)
 
 Promise queue with timeouts and promise cleanup after expiration.
 
