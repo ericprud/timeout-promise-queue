@@ -9,8 +9,9 @@
   "version": "0.9.0",
   "main": "timeout-promise-queue.js",
   "scripts": {
-    "test": "mocha && jest",
+    "test": "mocha && jest --coverage",
     "test-ci": "jest --coverage && cat ./coverage/lcov.info | coveralls"
+    "coverage:report": "cat ./coverage/lcov.info | coveralls",
   },
   "jest": {
     "testRegex": "(/test/.*|(\\.|/)-test)\\.js$"
