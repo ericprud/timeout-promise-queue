@@ -10,8 +10,8 @@
   "main": "timeout-promise-queue.js",
   "scripts": {
     "test": "mocha && jest --coverage",
-    "test-ci": "jest --coverage && cat ./coverage/lcov.info | coveralls"
-    "coverage:report": "cat ./coverage/lcov.info | coveralls",
+    "test-ci": "jest --coverage && cat ./coverage/lcov.info | coveralls",
+    "coverage:report": "cat ./coverage/lcov.info | coveralls"
   },
   "jest": {
     "testRegex": "(/test/.*|(\\.|/)-test)\\.js$"
