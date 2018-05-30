@@ -4,8 +4,8 @@
     "lerna": "^2.11.0"
   },
   "name": "errz",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.9.0",
+  "main": "timeout-promise-queue.js",
   "scripts": {
     "test": "mocha && jest"
   },
