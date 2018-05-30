@@ -1,53 +1,87 @@
 /*
  */
 
-const QUEUE_SIZE = 'PROMISE_QUEUE_SIZE' in process.env
+const QueueSize = 'PROMISE_QUEUE_SIZE' in process.env
       ? parseInt(process.env.PROMISE_QUEUE_SIZE)
       : 25
-const Threads = 100
-const Sleep = 1000
-const ThreadTimeout = 20000
-const SuiteTimeout = 4 * Sleep * Threads / QUEUE_SIZE
-const Command = 'setTimeout(() => { process.exit(0); }, ' + Sleep + ')'
-// const Command = 'for (let i = 0; i < 2**28; ++i) ;' // The busy alternative.
+const LogProcessStats = true
 
 const child_process = require('child_process')
 const AllTests = []
 const Queue = require('../timeout-promise-queue.js').PromiseQueue(QueueSize)
 const _AfterAllTests = typeof jest !== 'undefined' ? afterAll : after
+const TestTimeoutMessage = 'timeout exceeded blah bah blah'
 
 /* start processes */
-for (let i = 0; i < Threads; ++i) {
-  AllTests.push({
-    i: i,
-    start: new Date(),
-    exec: Queue.add(cancel => new Promise((resolve, reject) => {
-      let program = child_process.spawn('node', ['-e', Command])
-      program.on('exit', exitCode => { resolve({exitCode:exitCode}) })
-      program.on('error', reject)
-      cancel.on('timeout', err => {
-        program.kill()
-        reject()
-      })
-    }), ThreadTimeout, () => Error('timeout exceeded in test ' + i))
-  })
+Tests = [
+  { processes: 10, sleep: 10000, timeout: 20000, ok: true },
+  { processes: 10, sleep: 10000, timeout: 200, ok: false,
+    rejection: () => Error(TestTimeoutMessage),
+    exceptionPattern: RegExp('^' + TestTimeoutMessage + '$') }
+]
+let SuiteTimeout = 250 // generous setup and tear-down time
+Tests.forEach((test, idx) => {
+  const command = 'setTimeout(() => { process.exit(0); }, ' + test.sleep + ')'
+  // const Command = 'for (let i = 0; i < 2**28; ++i) ;' // The busy alternative.
+  SuiteTimeout += 2 * test.sleep * test.processes / QueueSize
+  startProcesses(idx, test.processes, command, test.timeout, test.ok, test.rejection)
+})
+
+function startProcesses (batch, processes, command, timeout, ok, rejection) {
+  for (let i = 0; i < processes; ++i) {
+    const label = batch + '-' + i
+    AllTests.push({
+      label: label,
+      ok: ok,
+      start: new Date(),
+      exec: Queue.add(cancel => new Promise((resolve, reject) => {
+        let program = child_process.spawn('node', ['-e', command])
+        program.on('exit', exitCode => { resolve({exitCode:exitCode}) })
+        program.on('error', reject)
+        cancel.on('timeout', err => {
+          program.kill()
+          reject()
+        })
+      }), timeout, rejection)
+    })
+  }
 }
 
 /* test results */
 describe('churn', () => {
   AllTests.forEach(test => {
-    let title = 'should execute test ' + test.i + '.'
+    let title = 'should ' + (test.ok ? 'pass' : 'fail') + ' test ' + test.label + '.'
     function cb (done) {
       test.exec.then(exec => {
         test.end = new Date()
-        test.message = 'OK'
-        done()
+        if (test.ok) {
+          test.message = 'OK'
+          done()
+        } else {
+          test.message = 'unexpected success ' + JSON.stringify(test)
+          done(Error(test.message))
+        }
       }).catch(e => {
         test.end = new Date()
-        test.message = 'Error: ' + e
-        done(e)
-      })
+        if (test.ok) {
+          test.message = e
+          done(e)
+        } else {
+          if (test.exceptionPattern) {
+            if (e.message.match(test.exceptionPattern)) {
+              test.message = 'OK'
+              done()
+            } else {
+              test.message = "expected \"" + e.message + "\" to match /" + test.exceptionPattern + "/"
+              done(Error(test.message))
+            }
+          } else {
+            test.message = 'OK'
+            done()
+          }
         }
+      })
+    }
     if (typeof jest !== 'undefined') {
       it(title, cb, SuiteTimeout)
     } else /*if (typeof mocha !== 'undefined')*/ {
@@ -58,11 +92,11 @@ describe('churn', () => {
   })
 })
 
-if (true)
-_AfterAllTests(() => {
-  console.log('\n' + AllTests.map(
-    test =>
-      test.i + ' ' + (test.end - test.start)/1000.0 + ' ' + test.message
-  ).join('\n'))
-})
-
+if (LogProcessStats) {
+  _AfterAllTests(() => {
+    console.log('\n' + AllTests.map(
+      test =>
+        test.label + ' ' + (test.end - test.start)/1000.0 + ' ' + test.message
+    ).join('\n'))
+  })
+}
