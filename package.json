@@ -2,7 +2,7 @@
   "repository": "https://github.com/ericprud/timeout-promise-queue.git",
   "devDependencies": {
     "coveralls": "^3.0.1",
-    "jest": "^23.0.1",
+    "jest": "^23.1.0",
     "lerna": "^2.11.0"
   },
   "name": "errz",
