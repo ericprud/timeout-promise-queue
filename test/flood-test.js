@@ -13,7 +13,7 @@ const Command = 'setTimeout(() => { process.exit(0); }, ' + Sleep + ')'
 
 const child_process = require('child_process')
 const AllTests = []
-const Queue = require('./promise-queue.js').PromiseQueue(QUEUE_SIZE)
+const Queue = require('../promise-queue.js').PromiseQueue(QUEUE_SIZE)
 const _AfterAllTests = typeof jest !== 'undefined' ? afterAll : after
 
 /* start processes */
