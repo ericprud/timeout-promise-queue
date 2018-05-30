@@ -1,7 +1,5 @@
 sudo: false
 language: node_js
-env:
-  - CLI_TIMEOUT=10000
 node_js:
   - "6.0"
   - "8.0"
