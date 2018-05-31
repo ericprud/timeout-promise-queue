@@ -73,7 +73,11 @@ describe('timeout-promise-queue', () => {
     function cb (done) {
       test.exec.then(exec => {
         if (test.ok) {
-          report(true)
+          if (typeof exec !== 'object' || exec.exitCode !== 0) {
+            report(false, 'resolved result "' + JSON.stringify(exec) + '" !== { exitCode: 0 }')
+          } else {
+            report(true)
+          }
         } else {
           report(false, 'unexpected success')
         }

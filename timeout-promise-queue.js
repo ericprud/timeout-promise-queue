@@ -38,11 +38,12 @@ function PromiseQueue (threshold) {
                 nextEntry()
                 reject(r)
               }, timeout)
-              myCancellation.on('clear', resolve)
+              // pfunc().then emits 'clear' which resolves with pfunc's result.
+              myCancellation.on('clear', result => resolve(result))
               return timer
             }),
             pfunc(clientCancellation).then(result => {
-              myCancellation.emit('clear');
+              myCancellation.emit('clear', result);
               clearTimeout(timer)
               return result
             })
