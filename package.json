@@ -1,26 +1,26 @@
 {
-  "repository": "https://github.com/ericprud/timeout-promise-queue.git",
-  "devDependencies": {
-    "coveralls": "^3.0.1",
-    "jest": "^23.1.0",
-    "lerna": "^2.11.0"
-  },
   "name": "timeout-promise-queue",
-  "version": "0.9.0",
+  "version": "0.9.1",
+  "description": "Promise queue with timeouts and promise cleanup after expiration.",
+  "repository": "https://github.com/ericprud/timeout-promise-queue.git",
+  "keywords": ["timeout", "promise", "queue", "processes"],
+  "author": "Eric Prud'hommeaux <eric.npm@w3.org> (http://www.w3.org/People/Eric/)",
+  "license": "MIT",
   "main": "timeout-promise-queue.js",
   "scripts": {
     "test": "mocha && jest --coverage",
     "test-ci": "jest --coverage && cat ./coverage/lcov.info | coveralls",
     "coverage:report": "cat ./coverage/lcov.info | coveralls"
   },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "coveralls": "^3.0.1",
+    "jest": "^23.1.0",
+    "lerna": "^2.11.0",
+    "mocha": "^5.2.0"
+  },
   "jest": {
     "testRegex": "(/test/.*|(\\.|/)-test)\\.js$"
-  },
-  "keywords": [],
-  "author": "Eric Prud'hommeaux <eric.npm@w3.org> (http://www.w3.org/People/Eric/)",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "mocha": "^5.2.0"
   }
 }
