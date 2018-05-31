@@ -8,6 +8,8 @@ function PromiseQueue (threshold) {
   return {
     /** queue (I/O) functions which return promises.
      * @pfunc returns a promise
+     *   If add is called with a @timeout, @pfunc will be called with an
+     *   EventEmitter which will emit a 'timeout' if @timeout is exceeded.
      */
     add: function (pfunc, timeout, rejection) {
       if (++inPlay > threshold) {
@@ -21,34 +23,32 @@ function PromiseQueue (threshold) {
       }
 
       function makeTimeout () {
-        let timer = null
-        let clientCancellation = new EventEmitter();
-        let myCancellation = new EventEmitter();
         let ret = timeout === undefined
-          ? pfunc()
-          : Promise.race([
-            new Promise((resolve, reject) => {
-              timer = setTimeout(() => {
+            ? pfunc()
+            : new Promise((resolve, reject) => {
+              let clientCancellation = new EventEmitter();
+
+              // Create a timer to send a cancellation to pfunc()'s promise.
+              let timer = setTimeout(() => {
                 let r = typeof rejection === 'undefined'
                     ? Error('timeout of ' + timeout + ' exceeded')
                     : typeof rejection === 'function'
                     ? rejection()
                     : rejection
                 clientCancellation.emit('timeout', r);
-                nextEntry()
                 reject(r)
               }, timeout)
-              // pfunc().then emits 'clear' which resolves with pfunc's result.
-              myCancellation.on('clear', result => resolve(result))
-              return timer
-            }),
-            pfunc(clientCancellation).then(result => {
-              myCancellation.emit('clear', result);
-              clearTimeout(timer)
-              return result
+
+              // Delete timer after resolution.
+              resolve(pfunc(clientCancellation).then(result => {
+                clearTimeout(timer)
+                return result
+              }).catch(result => {
+                clearTimeout(timer)
+                throw result
+              }))
             })
-          ])
-        return ret.then(nextEntry)
+        return ret.then(nextEntry).catch(result => {throw nextEntry(result)})
       }
     },
 
@@ -59,8 +59,9 @@ function PromiseQueue (threshold) {
     }
   }
 
+  /** After each resolution or rejection, check the queue.
+   */
   function nextEntry (ret) {
-    // After each resolution, check the queue.
     --inPlay
     if (queue.length > 0) {
       queue.pop()()

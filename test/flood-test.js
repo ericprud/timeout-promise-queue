@@ -19,9 +19,14 @@ Tests = [
 
   { processes: 1, sleep: 1000, ok: true },
 
+  { processes: 5, sleep: 100, resolve: {exitCode: 0} , timeout: 200, ok: true },
+
   { processes: 1, sleep: 10000, timeout: 20, ok: false,
     // no rejection parameter so expect timeout-promise-queue's default:
     exceptionPattern: RegExp('^timeout of 20 exceeded$') },
+
+  { processes: 5, sleep: 100, reject: Error('died') , timeout: 200, ok: false,
+    exceptionPattern: RegExp('^died$') },
 
   { processes: 1, sleep: 10000, timeout: 20, ok: false,
     rejection: Error(TestTimeoutMessage),
@@ -37,27 +42,50 @@ Tests.forEach((test, idx) => {
   const command = 'setTimeout(() => { process.exit(0); }, ' + test.sleep + ')'
   // const Command = 'for (let i = 0; i < 2**28; ++i) ;' // The busy alternative.
   SuiteTimeout += 2 * test.sleep * test.processes / QueueSize
-  startProcesses(idx, test.processes, command, test.timeout, test.ok, test.rejection)
+  startProcesses(idx, test, command)
   ExpectedQueueSize += test.processes
 })
 
-function startProcesses (batch, processes, command, timeout, ok, rejection) {
-  for (let i = 0; i < processes; ++i) {
+function startProcesses (batch, test, command) {
+  for (let i = 0; i < test.processes; ++i) {
     const label = batch + '-' + i
-    AllTests.push({
+    AllTests.push(Object.assign({
       label: label,
-      ok: ok,
       start: new Date(),
-      exec: Queue.add(cancel => new Promise((resolve, reject) => {
-        let program = child_process.spawn('node', ['-e', command])
-        program.on('exit', exitCode => { resolve({exitCode:exitCode}) })
-        program.on('error', reject)
-        if (cancel)
-          cancel.on('timeout', err => {
-            program.kill()
-            reject()
-          })
-      }), timeout, rejection)
+      exec: Queue.add(
+        ('resolve' in test || 'reject' in test
+         ? makeThread(test)
+         : makeProcess(test)),
+        test.timeout, test.rejection)
+    }, test)) // copy guts of test template
+  }
+
+  function makeProcess (test) {
+    return cancel => new Promise((resolve, reject) => {
+      let program = child_process.spawn('node', ['-e', command])
+      program.on('exit', exitCode => { resolve({exitCode:exitCode}) })
+      program.on('error', reject)
+      if (cancel)
+        cancel.on('timeout', err => {
+          program.kill()
+          reject(err)
+        })
+    })
+  }
+
+  function makeThread (test) {
+    return cancel => new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if ('reject' in test) {
+          reject(test.reject)
+        } else {
+          resolve(test.resolve)
+        }
+      }, test.sleep)
+      if (cancel)
+        cancel.on('timeout', err => {
+          reject(err)
+        })
     })
   }
 }
@@ -86,7 +114,9 @@ describe('timeout-promise-queue', () => {
           report(false, e.message)
         } else {
           if (test.exceptionPattern) {
-            if (e.message.match(test.exceptionPattern)) {
+            if (!e || !e.message) {
+              report(false, "expected structured error instead of " + e)
+            } else if (e.message.match(test.exceptionPattern)) {
               report(true)
             } else {
               report(false, "expected \"" + e.message + "\" to match exceptionPattern")
