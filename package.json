@@ -21,7 +21,6 @@
   "devDependencies": {
     "coveralls": "^3.1.0",
     "jest": "^26.1.0",
-    "lerna": "^3.22.1",
     "mocha": "^8.0.1"
   },
   "jest": {
