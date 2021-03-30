@@ -17,11 +17,11 @@
     "test-ci": "jest --coverage && cat ./coverage/lcov.info | coveralls",
     "coverage:report": "cat ./coverage/lcov.info | coveralls"
   },
-  "dependencies": {},
   "devDependencies": {
+    "chalk": "^4.1.0",
     "coveralls": "^3.1.0",
-    "jest": "^26.1.0",
-    "mocha": "^8.0.1"
+    "jest": "^26.6.3",
+    "mocha": "^8.3.2"
   },
   "jest": {
     "testRegex": "(/test/.*|(\\.|/)-test)\\.js$"

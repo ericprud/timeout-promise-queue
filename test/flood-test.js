@@ -1,6 +1,11 @@
 /*
  */
 
+console.log(require('chalk').blueBright(
+  'These tests take about 45 seconds to run.\n' +
+    'Results will appear in 10-20 second chunks.'
+))
+
 const QueueSize = 'PROMISE_QUEUE_SIZE' in process.env
       ? parseInt(process.env.PROMISE_QUEUE_SIZE)
       : 5
